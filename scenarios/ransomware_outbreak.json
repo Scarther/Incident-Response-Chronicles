@@ -1,0 +1,312 @@
+{
+  "id": "ransomware_001",
+  "title": "Dark Monday",
+  "synopsis": "It's 6:47 AM on a Monday. You've just arrived at the office when your phone starts buzzing. Multiple employees are reporting that their files have been encrypted. A ransom note demands 50 Bitcoin within 48 hours. The clock is ticking.",
+  "difficulty": 5,
+  "estimated_time_minutes": 45,
+
+  "organization": {
+    "name": "Meridian Healthcare",
+    "industry": "Healthcare",
+    "employees": 2500,
+    "description": "Regional hospital network with 3 facilities"
+  },
+
+  "initial_briefing": [
+    "SITUATION REPORT",
+    "================",
+    "",
+    "Time: Monday, 06:47 AM",
+    "Location: Meridian Healthcare - Main Campus",
+    "",
+    "Multiple workstations displaying ransom notes.",
+    "File shares appear encrypted (.locked extension).",
+    "Help desk flooded with calls.",
+    "",
+    "CEO wants answers. Legal wants containment.",
+    "You have 48 hours before the ransom doubles.",
+    "",
+    "What do you do first, analyst?"
+  ],
+
+  "attack_chain": {
+    "threat_actor": {
+      "name": "BlackShadow",
+      "type": "Cybercriminal",
+      "sophistication": 7,
+      "motivation": "Financial gain via ransomware"
+    },
+    "stages": [
+      {
+        "name": "Initial Access",
+        "technique": "T1566.001 - Spearphishing Attachment",
+        "description": "Malicious Excel macro sent to HR department",
+        "timestamp": "Friday 14:32"
+      },
+      {
+        "name": "Execution",
+        "technique": "T1059.001 - PowerShell",
+        "description": "Macro executed PowerShell to download payload",
+        "timestamp": "Friday 14:33"
+      },
+      {
+        "name": "Persistence",
+        "technique": "T1547.001 - Registry Run Keys",
+        "description": "Added persistence via HKCU Run key",
+        "timestamp": "Friday 14:35"
+      },
+      {
+        "name": "Defense Evasion",
+        "technique": "T1562.001 - Disable Security Tools",
+        "description": "Attempted to disable Windows Defender",
+        "timestamp": "Friday 14:36"
+      },
+      {
+        "name": "Credential Access",
+        "technique": "T1003.001 - LSASS Memory",
+        "description": "Mimikatz dumped credentials from memory",
+        "timestamp": "Friday 15:22"
+      },
+      {
+        "name": "Lateral Movement",
+        "technique": "T1021.002 - SMB/Admin Shares",
+        "description": "Used stolen creds to spread via admin shares",
+        "timestamp": "Friday 15:30 - Sunday 02:00"
+      },
+      {
+        "name": "Impact",
+        "technique": "T1486 - Data Encrypted for Impact",
+        "description": "Ransomware deployed at 3 AM Monday",
+        "timestamp": "Monday 03:00"
+      }
+    ]
+  },
+
+  "systems": [
+    {
+      "id": "ws-hr-001",
+      "name": "HR-WORKSTATION-01",
+      "type": "Workstation",
+      "os": "Windows 10",
+      "ip": "10.10.5.22",
+      "user": "sarah.chen",
+      "department": "Human Resources",
+      "status": "compromised",
+      "is_patient_zero": true
+    },
+    {
+      "id": "fs-001",
+      "name": "FILE-SERVER-01",
+      "type": "FileServer",
+      "os": "Windows Server 2019",
+      "ip": "10.10.1.10",
+      "status": "encrypted",
+      "criticality": "high"
+    },
+    {
+      "id": "dc-001",
+      "name": "DC-PRIMARY",
+      "type": "DomainController",
+      "os": "Windows Server 2019",
+      "ip": "10.10.1.5",
+      "status": "at_risk",
+      "criticality": "critical"
+    },
+    {
+      "id": "backup-001",
+      "name": "BACKUP-SERVER",
+      "type": "Server",
+      "os": "Windows Server 2016",
+      "ip": "10.10.1.20",
+      "status": "unknown",
+      "criticality": "critical",
+      "note": "If this is encrypted, recovery will be extremely difficult"
+    }
+  ],
+
+  "evidence": [
+    {
+      "id": "ev-001",
+      "type": "email",
+      "title": "Suspicious Email",
+      "description": "Email to sarah.chen with Excel attachment 'Q4_Bonuses.xlsm'",
+      "location": "Exchange Server logs",
+      "discovered": false,
+      "analysis_reveals": [
+        "Sender: hr-notifications@meridian-healthcare.net (spoofed domain)",
+        "Attachment: Q4_Bonuses.xlsm (SHA256: 7a8b3c...)",
+        "Macro enabled document",
+        "Links to: hxxps://update-service[.]net/payload.exe"
+      ]
+    },
+    {
+      "id": "ev-002",
+      "type": "file",
+      "title": "Ransom Note",
+      "description": "README_LOCKED.txt found on encrypted systems",
+      "location": "Multiple workstations",
+      "discovered": true,
+      "content": "YOUR FILES HAVE BEEN ENCRYPTED BY BLACKSHADOW\n\nAll your important files have been encrypted with military-grade encryption.\nTo recover your files, you must pay 50 BTC to the following address:\n\nbc1q84j5h4ne7s8k...\n\nYou have 48 hours. After that, the price doubles.\nAfter 7 days, your decryption key will be destroyed.\n\nDo not contact law enforcement. Do not try to decrypt yourself.\nWe are watching.\n\n- BlackShadow"
+    },
+    {
+      "id": "ev-003",
+      "type": "log",
+      "title": "Windows Event Logs - HR Workstation",
+      "description": "Security and PowerShell logs from patient zero",
+      "location": "ws-hr-001",
+      "discovered": false,
+      "analysis_reveals": [
+        "Event 4688: powershell.exe spawned from EXCEL.EXE at 14:33",
+        "Event 4104: Encoded PowerShell command executed",
+        "Event 4624: Multiple Type 3 logons from 10.10.5.22",
+        "Event 4672: Special privileges assigned to compromised account"
+      ]
+    },
+    {
+      "id": "ev-004",
+      "type": "network",
+      "title": "Firewall Logs",
+      "description": "Outbound connection logs from perimeter firewall",
+      "location": "Palo Alto Firewall",
+      "discovered": false,
+      "analysis_reveals": [
+        "10.10.5.22 -> 185.234.XX.XX:443 (Command & Control)",
+        "Multiple internal hosts connecting to external IP",
+        "Large data transfer at 02:45 Monday (possible exfiltration)"
+      ]
+    },
+    {
+      "id": "ev-005",
+      "type": "interview",
+      "title": "Interview: Sarah Chen",
+      "description": "HR specialist who received the initial email",
+      "npc": "sarah_chen",
+      "discovered": false,
+      "reveals": [
+        "Received email about Q4 bonuses on Friday afternoon",
+        "Email looked legitimate - came from 'HR Notifications'",
+        "Opened attachment to check her bonus amount",
+        "Got a security warning but clicked 'Enable Content'",
+        "Nothing seemed wrong until Monday morning"
+      ]
+    }
+  ],
+
+  "npcs": [
+    {
+      "id": "sarah_chen",
+      "name": "Sarah Chen",
+      "role": "HR Specialist",
+      "department": "Human Resources",
+      "attitude": "scared",
+      "knowledge": ["Received phishing email", "Clicked macro", "Timeline of Friday"]
+    },
+    {
+      "id": "mike_torres",
+      "name": "Mike Torres",
+      "role": "IT Manager",
+      "department": "IT",
+      "attitude": "stressed",
+      "knowledge": ["Network topology", "Backup status", "Security tool deployment"]
+    },
+    {
+      "id": "ceo",
+      "name": "Dr. Patricia Webb",
+      "role": "CEO",
+      "department": "Executive",
+      "attitude": "demanding",
+      "knowledge": ["Business impact", "Patient data concerns", "Board pressure"]
+    }
+  ],
+
+  "actions": [
+    {
+      "id": "isolate_network",
+      "name": "Isolate affected network segments",
+      "time_cost": 2,
+      "stress_cost": 1,
+      "effects": ["Stops lateral movement", "Disrupts hospital operations", "Buys time"],
+      "unlocks": ["Check backup integrity"]
+    },
+    {
+      "id": "check_backups",
+      "name": "Check backup server status",
+      "time_cost": 1,
+      "stress_cost": 0,
+      "effects": ["Reveals backup status", "Critical for recovery decision"]
+    },
+    {
+      "id": "interview_sarah",
+      "name": "Interview Sarah Chen",
+      "time_cost": 1,
+      "stress_cost": 0,
+      "effects": ["Reveals patient zero", "Timeline information"]
+    },
+    {
+      "id": "analyze_malware",
+      "name": "Analyze ransomware sample",
+      "time_cost": 3,
+      "stress_cost": 1,
+      "effects": ["Identifies ransomware family", "May find decryption weakness"]
+    },
+    {
+      "id": "contact_fbi",
+      "name": "Contact FBI Cyber Division",
+      "time_cost": 1,
+      "stress_cost": 0,
+      "effects": ["Professional assistance", "Legal compliance", "Possible intel on actor"]
+    }
+  ],
+
+  "success_conditions": [
+    {
+      "type": "contain_threat",
+      "description": "Stop the ransomware from spreading further"
+    },
+    {
+      "type": "identify_patient_zero",
+      "description": "Determine how the attack started"
+    },
+    {
+      "type": "protect_backups",
+      "description": "Ensure backup server is not compromised"
+    },
+    {
+      "type": "recovery_plan",
+      "description": "Develop a plan to restore operations"
+    }
+  ],
+
+  "failure_conditions": [
+    {
+      "type": "time_expired",
+      "description": "48 hours pass without containment",
+      "consequence": "Ransom doubles, board loses confidence"
+    },
+    {
+      "type": "backups_lost",
+      "description": "Backup server gets encrypted",
+      "consequence": "Recovery becomes nearly impossible"
+    },
+    {
+      "type": "dc_compromised",
+      "description": "Domain controller gets encrypted",
+      "consequence": "Total network failure"
+    }
+  ],
+
+  "hints": [
+    {
+      "trigger": "stuck_5_minutes",
+      "text": "Start by containing the threat. What systems need to be isolated first?"
+    },
+    {
+      "trigger": "missed_patient_zero",
+      "text": "The ransom note appeared Monday morning. When did the attack actually begin?"
+    },
+    {
+      "trigger": "forgot_backups",
+      "text": "In ransomware incidents, the backup server is often a critical target. Have you checked it?"
+    }
+  ]
+}
